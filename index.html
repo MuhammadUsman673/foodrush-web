@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FoodRush - Reset Password</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -62,10 +61,7 @@
       margin-bottom: 16px;
       display: none;
     }
-    .success {
-      text-align: center;
-      display: none;
-    }
+    .success { text-align: center; display: none; }
     .success .big-emoji { font-size: 64px; margin-bottom: 16px; }
     .success h2 { margin-bottom: 8px; }
     .success p { margin-bottom: 24px; }
@@ -94,7 +90,7 @@
       <input type="password" id="password" placeholder="Enter new password" />
       <label>Confirm Password</label>
       <input type="password" id="confirm" placeholder="Confirm new password" />
-      <button onclick="resetPassword()">Reset Password 🔐</button>
+      <button id="resetBtn">Reset Password 🔐</button>
     </div>
     <div class="success" id="success-section">
       <div class="big-emoji">✅</div>
@@ -104,30 +100,30 @@
     </div>
   </div>
 
-  <script>
-    const supabase = window.supabase.createClient(
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    const db = createClient(
       'https://kzodtavvdnzxplprzusl.supabase.co',
       'sb_publishable_DXKTC0Wz-X_RroOeN-1z1Q_TosYe0sT'
     );
 
-    // Get token from URL query params
     const urlParams = new URLSearchParams(window.location.search);
     const tokenHash = urlParams.get('token_hash');
     const type = urlParams.get('type');
 
     if (tokenHash && type === 'recovery') {
-      supabase.auth.verifyOtp({
+      const { error } = await db.auth.verifyOtp({
         token_hash: tokenHash,
         type: 'recovery'
-      }).then(({ data, error }) => {
-        if (error) {
-          document.getElementById('error').textContent = '⚠️ ' + error.message;
-          document.getElementById('error').style.display = 'block';
-        }
       });
+      if (error) {
+        document.getElementById('error').textContent = '⚠️ ' + error.message;
+        document.getElementById('error').style.display = 'block';
+      }
     }
 
-    async function resetPassword() {
+    document.getElementById('resetBtn').addEventListener('click', async () => {
       const password = document.getElementById('password').value;
       const confirm = document.getElementById('confirm').value;
       const errorEl = document.getElementById('error');
@@ -152,15 +148,14 @@
         return;
       }
 
-      // Check if session exists
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await db.auth.getSession();
       if (!session) {
         errorEl.textContent = '⚠️ Session expired. Please request a new reset link.';
         errorEl.style.display = 'block';
         return;
       }
 
-      const { error } = await supabase.auth.updateUser({ password });
+      const { error } = await db.auth.updateUser({ password });
 
       if (error) {
         errorEl.textContent = '⚠️ ' + error.message;
@@ -169,7 +164,7 @@
         document.getElementById('form-section').style.display = 'none';
         document.getElementById('success-section').style.display = 'block';
       }
-    }
+    });
   </script>
 </body>
 </html>
