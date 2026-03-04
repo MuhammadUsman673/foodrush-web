@@ -119,6 +119,11 @@
       supabase.auth.verifyOtp({
         token_hash: tokenHash,
         type: 'recovery'
+      }).then(({ data, error }) => {
+        if (error) {
+          document.getElementById('error').textContent = '⚠️ ' + error.message;
+          document.getElementById('error').style.display = 'block';
+        }
       });
     }
 
@@ -129,6 +134,12 @@
 
       errorEl.style.display = 'none';
 
+      if (!password || !confirm) {
+        errorEl.textContent = '⚠️ Please fill in both fields';
+        errorEl.style.display = 'block';
+        return;
+      }
+
       if (password !== confirm) {
         errorEl.textContent = '⚠️ Passwords do not match';
         errorEl.style.display = 'block';
@@ -137,6 +148,14 @@
 
       if (password.length < 6) {
         errorEl.textContent = '⚠️ Password must be at least 6 characters';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      // Check if session exists
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        errorEl.textContent = '⚠️ Session expired. Please request a new reset link.';
         errorEl.style.display = 'block';
         return;
       }
